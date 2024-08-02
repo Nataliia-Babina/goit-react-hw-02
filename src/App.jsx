@@ -1,35 +1,49 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from "react";
+import Description from "./components/Description/Description";
+import Feedback from "./components/Feedback/Feedback";
+import Options from "./components/Options/Options";
+import Notification from "./components/Notification/Notification";
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+  const [counts, setCounts] = useState(() => {
+    const storedCounts = localStorage.getItem("feedbackCounts"); 
+    if (storedCounts) { 
+      return JSON.parse(storedCounts); 
+    } else {
+      return { good: 0, neutral: 0, bad: 0 };  
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("feedbackCounts", JSON.stringify(counts)); 
+  }, [counts]);
+
+  const updateFeedback = feedbackType => {
+    setCounts(prevCounts => ({
+      ...prevCounts,
+      [feedbackType]: prevCounts[feedbackType] + 1
+    }));
+  };
+
+  const handleClickReset = () => {
+    setCounts({
+      good: 0,
+      neutral: 0,
+      bad: 0
+    });
+    localStorage.removeItem("feedbackCounts"); 
+  };
+
+  const totalFeedback = counts.good + counts.neutral + counts.bad;
+  let positive = 0;
+  if (totalFeedback !== 0) positive = Math.round((counts.good / totalFeedback) * 100);
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <Description />
+      <Options updateFeedback={updateFeedback} handleClickReset={handleClickReset} totalFeedback={totalFeedback} />
+      { totalFeedback > 0 ? <Feedback counts={counts} totalFeedback={totalFeedback} positive={positive} /> : <Notification /> }
     </>
-  )
-}
-
-export default App
+  );
+};
+export default App;
